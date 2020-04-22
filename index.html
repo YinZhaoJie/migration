@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>家庭迁徙</title>
+    <style>	
+        html, body, #map {
+            padding:0;
+            margin:0;
+            height:100%;
+            width:100%;
+        }		
+		.mytitle{
+			z-index：1000;
+			color:#fff;
+			font-size:16px;
+			text-align:center;
+			position:absolute;
+			top:10px;
+			left:40%;
+			width:20%
+		}
+		canvas:first-child
+		{
+			filter: Invert(100%) grayscale(100%);	
+			//hue-rotate(180deg);
+			//background-blend-mode: exclusion;
+		}
+    </style>
+	<link rel="stylesheet" href="https://js.arcgis.com/4.14/esri/themes/light/main.css"/>
+    <script src="js/echarts.min.js"></script>
+	<script src="js/echarts-gl.js"></script>
+	<script src="js/data2series_1by1.js"></script>
+	<script>
+	var dojoConfig = {
+        parseOnLoad: true,
+        packages: [{
+            name: "src",
+            location: location.pathname.replace(/\/[^/]+$/, "")+"/src"
+        }]
+    };
+	</script>
+	<script src="https://js.arcgis.com/4.14/"></script>
+    <script>
+        var map;
+		window.gl;
+        require([
+            "esri/Map",
+			"esri/Basemap",
+			"esri/layers/WebTileLayer",	
+			//"esri/layers/TileLayer",
+			"src/echartsLayer",
+            //"esri/views/SceneView",
+			"esri/views/MapView",
+            "dojo/domReady!"
+        ], function (
+            Map,Basemap,WebTileLayer,echartsLayer,MapView
+        ) {	
+			var mapBaseLayer = new WebTileLayer({
+			title: "TianDiTu1",
+			  urlTemplate:
+				"https://{subDomain}.tianditu.gov.cn/DataServer?T=vec_w&x={col}&y={row}&l={level}&tk=c5f660229a9f1c8d13394a117c79f33e",	
+			  subDomains:["t1","t2","t3","t4","t5","t6","t7"],
+			  copyright:
+				"<a href='https://www.tianditu.gov.cn' target='_blank' style='font-size:10px;color:#000'>底图源自：天地图</a> | <a href='http://www.idataway.com/' target='_blank' style='font-size:10px;color:#000'>零点有数·大数据事业部·GIS团队--提供web地图服务</a>"
+			});
+			var mapBaseLayer2 = new WebTileLayer({
+			title: "TianDiTu2",		
+			  urlTemplate:
+				"https://{subDomain}.tianditu.gov.cn/DataServer?T=cva_w&x={col}&y={row}&l={level}&tk=c5f660229a9f1c8d13394a117c79f33e",
+			  subDomains:["t1","t2","t3","t4","t5","t6","t7"],		  
+			});		
+			// Create a Basemap with the WebTileLayer. The thumbnailUrl will be used for
+			// the image in the BasemapToggle widget.
+			var tmap= new Basemap({
+			  baseLayers: [mapBaseLayer,mapBaseLayer2],
+			  title: "TianDiTu",
+			  id: "tianditu",  
+			  thumbnailUrl:
+				"https://t6.tianditu.gov.cn/DataServer?T=cva_w&x=6742&y=3100&l=13&tk=8971e4c7b3640d506c2dc111221af6a0"
+			});	
+			var map = new Map({
+				basemap: tmap,
+			});
+			//var view = new SceneView({
+			var view = new MapView({
+				center: [110.62, 34.32], // long, lat
+				container: 'map',
+				map: map,
+				zoom: 4,
+				constraints:{
+				  minZoom:4,
+				  maxZoom:6		  
+				},					
+			});			
+        view.on('layerview-create',function(){
+            var chart = new echartsLayer(view,echarts);
+			var option = {
+                title: {
+                    text: '家庭迁徙图',
+                    subtext: '',
+					zlevel:0,
+                    left: 'center',
+                    textStyle: {
+                        color: '#000'
+                    }
+                },
+                series: series,
+				tooltip: {
+					trigger: 'item',
+					formatter:function(params){    
+							//console.log(params);
+							if (params.data.fromName){
+								var relVal = "";
+									 relVal +=  params.marker +params.seriesName +'<br/>'
+											  +params.data.fromName+ ' >>' + params.data.toName+'<br/>'
+											  +'共迁徙：'+params.data.value+'人';
+									return relVal;
+							}else{
+								var relVal = "";
+									 relVal +=  params.marker +params.seriesName +'<br/>'
+											  +params.data.name+'<br/>'
+											  +'共：'+params.data.value[2]+'人';
+									return relVal;							
+							}
+						},				
+					},				
+				legend:{
+					icon:'circle',
+					orient:'vertical',					
+					top:'75%',
+					left: '80%',
+					zlevel:1,
+					data: ['祖辈居住地','父辈居住地','受访者居住地','一代迁徙','二代迁徙','跨省婚姻'],
+					selected:{'祖辈居住地':false,'父辈居住地':false,'受访者居住地':false,'一代迁徙':false,'二代迁徙':false,'跨省婚姻':false},
+					selectedMode:'multiple',
+					textStyle: {
+						color: '#fff'
+					},
+					backgroundColor:'rgba(128, 128, 128, 0.5)'
+				}
+			};		
+			chart.setChartOption(option);
+		});		
+	});
+    </script>
+</head>
+<body>
+    <div id="map"></div>
+</body>
+</html>
